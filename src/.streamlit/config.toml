@@ -1,0 +1,8 @@
+[browser]
+gatherUsageStats = false
+
+[theme.light]
+backgroundColor = "#fef9ed"
+
+[theme.dark]
+backgroundColor = "#21232c"
