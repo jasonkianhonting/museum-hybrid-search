@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=83.0.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "museum-hybrid-search"
 version = "0.1.0"
@@ -6,8 +10,14 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "pinecone>=9.1.0",
+    "pydantic>=2.13.4",
     "python-dotenv>=1.2.2",
     "streamlit>=1.59.2",
     "tqdm>=4.68.4",
     "typing-extensions>=4.16.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
 ]
