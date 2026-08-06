@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock, patch
 import pytest
+import requests
 import streamlit as st
 import app
+from helpers.helpers import calculate_embeddings_and_search, fetch_image_bytes_batch
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +29,7 @@ def run_around_tests():
     yield
 
 
-@patch("app.Pinecone")
+@patch("helpers.helpers.Pinecone")
 def test_calculate_embeddings_and_search(mock_pinecone):
     mock_index = MagicMock()
     mock_pc_instance = MagicMock()
@@ -44,12 +46,12 @@ def test_calculate_embeddings_and_search(mock_pinecone):
 
     mock_pinecone.return_value = mock_pc_instance
 
-    results = app.calculate_embeddings_and_search("Monet", 10)
+    results = calculate_embeddings_and_search("Monet", 10)
     assert len(results) == 1
     assert results[0]["metadata"]["title"] == "Test Art"
 
 
-@patch("app.requests.get")
+@patch("helpers.helpers.requests.get")
 def test_fetch_image_bytes_batch_success(mock_requests_get):
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -57,18 +59,18 @@ def test_fetch_image_bytes_batch_success(mock_requests_get):
     mock_requests_get.return_value = mock_response
 
     urls = ("https://www.artic.edu/iiif/2/test/full/843,/0/default.jpg",)
-    results = app.fetch_image_bytes_batch(urls)
+    results = fetch_image_bytes_batch(urls)
 
     assert urls[0] in results
     assert results[urls[0]] == b"fake_image_bytes"
 
 
-@patch("app.requests.get")
+@patch("helpers.helpers.requests.get")
 def test_fetch_image_bytes_batch_failure(mock_requests_get):
-    mock_requests_get.side_effect = app.requests.exceptions.RequestException("Error")
+    mock_requests_get.side_effect = requests.exceptions.RequestException("Error")
 
     urls = ("https://www.artic.edu/iiif/2/bad/full/843,/0/default.jpg",)
-    results = app.fetch_image_bytes_batch(urls)
+    results = fetch_image_bytes_batch(urls)
 
     assert len(results) == 0
 

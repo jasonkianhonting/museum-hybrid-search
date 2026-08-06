@@ -1,0 +1,85 @@
+import concurrent.futures
+import requests
+import streamlit as st
+from pinecone import Pinecone
+
+
+# Helper functions
+@st.cache_data(show_spinner="Searching for results")
+def calculate_embeddings_and_search(input: str, max_results: int):
+    API_KEY = st.secrets["PINECONE_API_KEY"]
+    HOST = st.secrets["PINECONE_HOST_INDEX"]
+    NAMESPACE_INDEX = st.secrets["PINECONE_NAMESPACE_INDEX"]
+
+    pc = Pinecone(api_key=API_KEY)
+
+    index = pc.Index(host=HOST)
+
+    # Convert the query into a dense vector
+    dense_query_embedding = pc.inference.embed(
+        model=st.secrets["DENSE_EMBEDDING_MODEL"],
+        inputs=input,
+        parameters={"input_type": "query", "truncate": "END"},
+    )
+
+    # Convert the query into a sparse vector
+    sparse_query_embedding = pc.inference.embed(
+        model=st.secrets["SPARSE_EMBEDDING_MODEL"],
+        inputs=input,
+        parameters={"input_type": "query", "truncate": "END"},
+    )
+
+    query_response = None
+
+    for dense, sparse in zip(dense_query_embedding, sparse_query_embedding):
+        query_response = index.query(
+            namespace=NAMESPACE_INDEX,
+            top_k=max_results,
+            vector=dense["values"],
+            sparse_vector={
+                "indices": sparse["sparse_indices"],
+                "values": sparse["sparse_values"],
+            },
+            include_values=False,
+            include_metadata=True,
+        )
+    return query_response.matches if query_response else []
+
+
+# This is created as it appears Streamlit's image function does a generic api call
+# and uses a very generic if not, no headers at all, causing HTTP 430 errors
+@st.cache_data(show_spinner="Downloading batches of images...")
+def fetch_image_bytes_batch(url_list: tuple[str, ...]) -> dict[str, bytes]:
+    results = {}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_url = {
+            executor.submit(fetch_single, url): url for url in url_list if url
+        }
+        for future in concurrent.futures.as_completed(future_to_url):
+            url, data = future.result()
+            if data:
+                results[url] = data
+
+    return results
+
+
+def fetch_single(url):
+    if not url:
+        return url, None
+    try:
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            ),
+            "Referer": "https://www.artic.edu/",
+            "Accept": (
+                "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+            ),
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return url, response.content
+    except requests.exceptions.RequestException:
+        return url, None
