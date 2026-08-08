@@ -4,6 +4,7 @@ from helpers.helpers import (
     calculate_embeddings_and_search,
     fetch_image_bytes_batch,
     get_logger,
+    validate_image_url,
 )
 from models.models import ArtworkMetadata, SearchParameters
 from components.components import (
@@ -66,9 +67,9 @@ def show_details(item: ArtworkMetadata):
         st.title(item["title"], text_alignment="center")
         st.subheader(f"By {item['artist_title']}", text_alignment="center")
         logger.info(f"{item["image_url"]} is being used to showcase the image")
-        if item["image_url"] in st.session_state.image_cache:
+        if validate_image_url(item["image_url"]):
             st.image(
-                st.session_state.image_cache[item["image_url"]],
+                item["image_url"],
                 width="stretch",
                 link=item["image_url"],
             )
@@ -150,7 +151,7 @@ with main_container:
             )
 
             columns = st.columns(3, gap="medium")
-            for idx, item in enumerate(validated_catalog):
+            for idx, item in enumerate(filtered_catalog):
                 with columns[idx % 3]:
                     render_artwork_card(
                         item["metadata"], idx, open_modal_callback, show_details

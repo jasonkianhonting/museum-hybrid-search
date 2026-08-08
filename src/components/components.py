@@ -2,7 +2,7 @@ import streamlit as st
 import string
 from pydantic import ValidationError
 from models.models import ArtworkMetadata
-from helpers.helpers import get_logger
+from helpers.helpers import get_logger, validate_image_url
 
 
 def handle_artwork_click(
@@ -48,18 +48,28 @@ def render_artwork_card(
 
     with st.container(border=True):
         try:
-            if img_url and img_url.strip():
+            if img_url and img_url.strip() and validate_image_url(img_url):
+                logger.info(f"{img_url} has been validated")
                 st.image(img_url, link=img_url)
             else:
-                raise KeyError("Image URL is not valid")
+                logger.error(f"{img_url} is not valid")
+                st.html(f"""
+                    <div style="width: 100% ; height: 200px; background-color: #f0f2f6; 
+                                border: 2px dashed #d1d5db; border-radius: 8px; display: flex; 
+                                align-items: center; justify-content: center; color: #6b7280; flex-direction: column; gap: 4px;">
+                        <span>⚠️ Image is not available.</span>
+                        <span style="font-size: 11px; opacity: 0.7;"></span>
+                    </div>
+                """)
 
-        except Exception as e:
+        except Exception as ex:
+            logger.error(f"Unexpected error occurred. Please review logs: {ex}")
             st.html(f"""
                 <div style="width: 100% ; height: 200px; background-color: #f0f2f6; 
                             border: 2px dashed #d1d5db; border-radius: 8px; display: flex; 
                             align-items: center; justify-content: center; color: #6b7280; flex-direction: column; gap: 4px;">
                     <span>⚠️ Image is not available.</span>
-                    <span style="font-size: 11px; opacity: 0.7;">({e})</span>
+                    <span style="font-size: 11px; opacity: 0.7;"></span>
                 </div>
             """)
 

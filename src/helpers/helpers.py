@@ -3,6 +3,7 @@ import requests
 import streamlit as st
 import logging
 from pinecone import Pinecone
+from urllib.parse import urlparse
 
 
 # Helper functions
@@ -90,6 +91,22 @@ def fetch_single(url):
             f"Failed to fetch image from {url}. Exception message: {request_exception}"
         )
         return url, None
+
+
+def validate_image_url(url: str):
+    logger = get_logger()
+    try:
+        result = urlparse(url).path.strip("/").split("/")
+        image_id = result[2]
+        if image_id.lower() == "none":
+            logger.error("Image Id is null")
+            return False
+
+        return True
+
+    except Exception as ex:
+        logger.error(f"Unexpected error occurred, please review log: {ex}")
+        return False
 
 
 @st.cache_resource
