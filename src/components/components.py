@@ -2,6 +2,7 @@ import streamlit as st
 import string
 from pydantic import ValidationError
 from models.models import ArtworkMetadata
+from helpers.helpers import get_logger
 
 
 def handle_artwork_click(
@@ -42,17 +43,23 @@ def render_search_form():
 def render_artwork_card(
     item_metadata: dict, idx: int, open_modal_callback, show_details_callback
 ):
+    logger = get_logger()
     img_url = item_metadata.get("image_url", "")
 
     with st.container(border=True):
-        if img_url in st.session_state.get("image_cache", {}):
-            st.image(st.session_state.image_cache[img_url], link=img_url)
-        else:
-            st.html("""
+        try:
+            if img_url and img_url.strip():
+                st.image(img_url, link=img_url)
+            else:
+                raise KeyError("Image URL is not valid")
+
+        except Exception as e:
+            st.html(f"""
                 <div style="width: 100% ; height: 200px; background-color: #f0f2f6; 
                             border: 2px dashed #d1d5db; border-radius: 8px; display: flex; 
-                            align-items: center; justify-content: center; color: #6b7280;">
-                    ⚠️ Image is not available.
+                            align-items: center; justify-content: center; color: #6b7280; flex-direction: column; gap: 4px;">
+                    <span>⚠️ Image is not available.</span>
+                    <span style="font-size: 11px; opacity: 0.7;">({e})</span>
                 </div>
             """)
 

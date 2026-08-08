@@ -1,6 +1,7 @@
 import concurrent.futures
 import requests
 import streamlit as st
+import logging
 from pinecone import Pinecone
 
 
@@ -65,6 +66,7 @@ def fetch_image_bytes_batch(url_list: tuple[str, ...]) -> dict[str, bytes]:
 
 
 def fetch_single(url):
+    logger = get_logger()
     if not url:
         return url, None
     try:
@@ -78,8 +80,34 @@ def fetch_single(url):
                 "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
             ),
         }
+        logger.info(f"Attempting to fetch image from {url}")
         response = requests.get(url, headers=headers, timeout=10)
+        logger.info(f"Successfully fetched image from {url}. See response, {response}")
         response.raise_for_status()
         return url, response.content
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as request_exception:
+        logger.error(
+            f"Failed to fetch image from {url}. Exception message: {request_exception}"
+        )
         return url, None
+
+
+@st.cache_resource
+def get_logger(name: str = "DigitalLouvreApp"):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    # Check if handlers already exist to prevent stacking/initialising more loggers
+    if not logger.handlers:
+        console_handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+        )
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+        file_handler = logging.FileHandler("app.log")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    return logger

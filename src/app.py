@@ -1,6 +1,10 @@
 import streamlit as st
 from pydantic import ValidationError
-from helpers.helpers import calculate_embeddings_and_search, fetch_image_bytes_batch
+from helpers.helpers import (
+    calculate_embeddings_and_search,
+    fetch_image_bytes_batch,
+    get_logger,
+)
 from models.models import ArtworkMetadata, SearchParameters
 from components.components import (
     render_artwork_card,
@@ -9,6 +13,7 @@ from components.components import (
     render_chips,
 )
 
+logger = get_logger()
 st.set_page_config(layout="wide", page_icon="🏛️")
 
 # Html to compensate Streamlit's limitations
@@ -60,6 +65,7 @@ def show_details(item: ArtworkMetadata):
     with center_box:
         st.title(item["title"], text_alignment="center")
         st.subheader(f"By {item['artist_title']}", text_alignment="center")
+        logger.info(f"{item["image_url"]} is being used to showcase the image")
         if item["image_url"] in st.session_state.image_cache:
             st.image(
                 st.session_state.image_cache[item["image_url"]],
@@ -116,6 +122,9 @@ with main_container:
                 st.session_state.filtered_catalog = []
                 st.session_state.modal_open = False
             else:
+                logger.info(
+                    f"Calculating embeddings for {search_query} with a maximum results of {result_nums}"
+                )
                 st.session_state.filtered_catalog = calculate_embeddings_and_search(
                     search_query, result_nums
                 )
