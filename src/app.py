@@ -106,6 +106,10 @@ left_container, main_container, right_container = st.columns([1, 3, 1])
 with main_container:
     with st.container():
         search_query, result_nums, submit_button = render_search_form()
+        st.toast(
+            "This app might not function as expected in Safari for iOS devices. Please make sure you use another web browser for the optimum viewing experience.",
+            duration="long",
+        )
 
         if len(search_query) > 30:
             st.warning("Search query is too long. Please limit to 30 characters.")
