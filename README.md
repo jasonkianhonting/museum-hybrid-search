@@ -82,6 +82,8 @@ graph LR
 - **Free Tier Pinecone:** The pinecone index that I am currently using is in its free tier. This means that the data ingestion would not be all the data available in the data dump but rather it only contains a percentage of the data due to the space and inference limitations.
 - **Inconsistent Upstream Data:** Real-world museum APIs frequently contain legacy anomalies, such as broken IIIF image URLs, missing artwork titles, or incomplete metadata tags. _(Future improvement: Implement a strict data validation schema during ingestion to filter out or sanitize incomplete records before upserting to Pinecone.)_
 
+- **Streamlit Incompatibility With Safari:** While testing, I found that once deployed to production, it behaves oddly such that images do not load in Safari (though only in iOS) but works well in other browsers. Due to that, I would recommend other web browsers such as Chrome. _(Future improvement: Implement a workaround, perhaps inserting html to render the image instead of relying on Streamlit's library. Though, the core issue might just be Cloudflare authentication that causes this issue. Potentially, could save those images into a database.)_
+
 ## Tech Stack
 
 - **Frontend / UI:** [Streamlit](https://streamlit.io/)
